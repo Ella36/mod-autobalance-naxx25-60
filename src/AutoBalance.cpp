@@ -129,7 +129,7 @@ class AutoBalanceMapInfo : public DataMap::Base
 public:
     AutoBalanceMapInfo() {}
     AutoBalanceMapInfo(uint32 count, uint8 selLevel) : playerCount(count),mapLevel(selLevel) {}
-    uint32 playerCount = 25;
+    uint32 playerCount = 10;
     uint8 mapLevel = 60;
 };
 
