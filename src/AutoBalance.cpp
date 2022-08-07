@@ -273,36 +273,6 @@ class AutoBalance_PlayerScript : public PlayerScript
                 ChatHandler(Player->GetSession()).SendSysMessage("This server is running the |cff4CFF00AutoBalance |rmodule.");
             }
         }
-
-        virtual void OnLevelChanged(Player* player, uint8 /*oldlevel*/) override
-        {
-            if (!enabled || !player)
-                return;
-
-            if (LevelScaling == 0)
-                return;
-
-            AutoBalanceMapInfo *mapABInfo=player->GetMap()->CustomData.GetDefault<AutoBalanceMapInfo>("AutoBalanceMapInfo");
-
-            if (mapABInfo->mapLevel < player->getLevel())
-                mapABInfo->mapLevel = player->getLevel();
-        }
-
-        void OnGiveXP(Player* player, uint32& amount, Unit* victim) override
-        {
-            if (victim && DungeonScaleDownXP)
-            {
-                Map* map = player->GetMap();
-
-                if (map->IsDungeon())
-                {
-                    // Ensure that the players always get the same XP, even when entering the dungeon alone
-                    uint32 maxPlayerCount = ((InstanceMap*)sMapMgr->FindMap(map->GetId(), map->GetInstanceId()))->GetMaxPlayers();
-                    uint32 currentPlayerCount = map->GetPlayersCountExceptGMs();
-                    amount *= (float)currentPlayerCount / maxPlayerCount;
-                }
-            }
-        }
 };
 
 class AutoBalance_UnitScript : public UnitScript
@@ -599,6 +569,7 @@ public:
 
         uint8 originalLevel = creatureTemplate->maxlevel;
 
+        // TODO: fix scaling to not default to 60
         uint8 level = mapABInfo->mapLevel;
 
         uint8 areaMinLvl, areaMaxLvl;
