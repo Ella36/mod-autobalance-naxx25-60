@@ -569,7 +569,6 @@ public:
 
         uint8 originalLevel = creatureTemplate->maxlevel;
 
-        // TODO: fix scaling to not default to 60
         uint8 level = mapABInfo->mapLevel;
 
         uint8 areaMinLvl, areaMaxLvl;
