@@ -129,8 +129,8 @@ class AutoBalanceMapInfo : public DataMap::Base
 public:
     AutoBalanceMapInfo() {}
     AutoBalanceMapInfo(uint32 count, uint8 selLevel) : playerCount(count),mapLevel(selLevel) {}
-    uint32 playerCount = 0;
-    uint8 mapLevel = 0;
+    uint32 playerCount = 25;
+    uint8 mapLevel = 60;
 };
 
 // The map values correspond with the .AutoBalance.XX.Name entries in the configuration file.
@@ -1004,7 +1004,7 @@ void AddAutoBalanceScripts()
     new AutoBalance_PlayerScript();
     new AutoBalance_UnitScript();
     new AutoBalance_AllCreatureScript();
-    new AutoBalance_AllMapScript();
+    // new AutoBalance_AllMapScript();
     new AutoBalance_CommandScript();
-    new AutoBalance_GlobalScript();
+    // new AutoBalance_GlobalScript();
 }
