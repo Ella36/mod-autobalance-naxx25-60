@@ -532,6 +532,10 @@ public:
         if (!creature || !creature->GetMap())
             return;
 
+        // Check if mapId equals to Naxxramas (mapId: 533)
+        if (creature->GetMapId() != 533)
+            return;
+
         if (!creature->GetMap()->IsDungeon() && !creature->GetMap()->IsBattleground() && DungeonsOnly)
             return;
 
