@@ -25,7 +25,6 @@ AutoBalance.MinManaModifier=0.01
 
 AutoBalance.MinDamageModifier=0.01
 
-
 #
 #     AutoBalance.rate.*
 #        You can tune all rates increasing/decreasing difficulty in a linear way
@@ -38,4 +37,3 @@ AutoBalance.rate.health = 1.0
 AutoBalance.rate.mana   = 1.0
 AutoBalance.rate.armor  = 1.0
 AutoBalance.rate.damage = 1.0
-

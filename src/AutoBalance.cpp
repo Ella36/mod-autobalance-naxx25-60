@@ -57,7 +57,6 @@ ABModuleScript::ABModuleScript(const char* name)
     ScriptRegistry<ABModuleScript>::AddScript(this);
 }
 
-
 class AutoBalanceCreatureInfo : public DataMap::Base
 {
 public:
@@ -190,7 +189,6 @@ public:
     {
     }
 
-
     void Creature_SelectLevel(const CreatureTemplate* /*creatureTemplate*/, Creature* creature) override
     {
         ModifyCreatureAttributes(creature, true);
@@ -240,11 +238,6 @@ public:
             return;
         }
 
-        creatureABInfo->instancePlayerCount = mapABInfo->playerCount;
-
-        if (!creatureABInfo->instancePlayerCount) // no players in map, do not modify attributes
-            return;
-
         uint8 originalLevel = creatureTemplate->maxlevel;
 
         uint8 level = mapABInfo->mapLevel;
@@ -254,7 +247,7 @@ public:
         if (originalLevel < 80)
             skipLevel = true;
 
-        if (!skipLevel) {  // change level only whithin the offsets and when in dungeon/raid
+        if (!skipLevel) { 
             // scale level by subtracting 20 (80, 81, 82, 83) to (60, 61, 62, 63)
             creatureABInfo->selectedLevel = originalLevel - 20;
             creature->SetLevel(creatureABInfo->selectedLevel);
