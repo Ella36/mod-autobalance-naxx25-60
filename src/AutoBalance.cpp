@@ -101,7 +101,6 @@ class AutoBalance_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-
         globalRate = sConfigMgr->GetOption<float>("AutoBalance.rate.global", 1.0f);
         healthMultiplier = sConfigMgr->GetOption<float>("AutoBalance.rate.health", 1.0f);
         manaMultiplier = sConfigMgr->GetOption<float>("AutoBalance.rate.mana", 1.0f);
@@ -176,76 +175,6 @@ class AutoBalance_AllMapScript : public AllMapScript
         {
             if (player->IsGameMaster())
                 return;
-
-            AutoBalanceMapInfo *mapABInfo=map->CustomData.GetDefault<AutoBalanceMapInfo>("AutoBalanceMapInfo");
-
-            // always check level, even if not conf enabled
-            // because we can enable at runtime and we need this information
-            if (player) {
-                if (player->getLevel() > mapABInfo->mapLevel)
-                    mapABInfo->mapLevel = player->getLevel();
-            } else {
-                Map::PlayerList const &playerList = map->GetPlayers();
-                if (!playerList.IsEmpty())
-                {
-                    for (Map::PlayerList::const_iterator playerIteration = playerList.begin(); playerIteration != playerList.end(); ++playerIteration)
-                    {
-                        if (Player* playerHandle = playerIteration->GetSource())
-                        {
-                            if (!playerHandle->IsGameMaster() && playerHandle->getLevel() > mapABInfo->mapLevel)
-                                mapABInfo->mapLevel = playerHandle->getLevel();
-                        }
-                    }
-                }
-            }
-
-            mapABInfo->playerCount = map->GetPlayersCountExceptGMs();
-        }
-
-        void OnPlayerLeaveAll(Map* map, Player* player)
-        {
-            if (player->IsGameMaster())
-                return;
-
-            AutoBalanceMapInfo *mapABInfo=map->CustomData.GetDefault<AutoBalanceMapInfo>("AutoBalanceMapInfo");
-
-            if (map->GetEntry() && map->GetEntry()->IsDungeon())
-            {
-                bool AutoBalanceCheck = false;
-                Map::PlayerList const& pl = map->GetPlayers();
-                for (Map::PlayerList::const_iterator itr = pl.begin(); itr != pl.end(); ++itr)
-                {
-                    if (Player* plr = itr->GetSource())
-                    {
-                        if (plr->IsInCombat())
-                            AutoBalanceCheck = true;
-                    }
-                }
-                //pklloveyou天鹿:
-                if (AutoBalanceCheck)
-                {
-                    for (Map::PlayerList::const_iterator itr = pl.begin(); itr != pl.end(); ++itr)
-                    {
-                        if (Player* plr = itr->GetSource())
-                        {
-                            plr->GetSession()->SendNotification("|cff4cff00%s|rAccess can be unlocked during non-combat", map->GetMapName());
-                            plr->GetSession()->SendNotification("|cffffffff[%s]|rThe player left during the battle|cff4cff00%s|rInstance elastic lock", player->GetName().c_str(), map->GetMapName());
-                        }
-                    }
-                }
-                else
-                {
-                    //mapABInfo->playerCount--;
-                    mapABInfo->playerCount = map->GetPlayersCountExceptGMs() - 1;
-                }
-            }
-
-            // always check level, even if not conf enabled
-            // because we can enable at runtime and we need this information
-            if (!mapABInfo->playerCount) {
-                mapABInfo->mapLevel = 0;
-                return;
-            }
         }
 };
 
