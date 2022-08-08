@@ -175,6 +175,10 @@ class AutoBalance_AllMapScript : public AllMapScript
         {
             if (player->IsGameMaster())
                 return;
+
+            // Check if mapId equals to Naxxramas (mapId: 533)
+            if (map->GetId() != 533)
+                return;
         }
 };
 
@@ -251,11 +255,9 @@ public:
             skipLevel = true;
 
         if (!skipLevel) {  // change level only whithin the offsets and when in dungeon/raid
-            if (level != creatureABInfo->selectedLevel || creatureABInfo->selectedLevel != creature->getLevel()) {
-                // scale level by subtracting 20 (80, 81, 82, 83) to (60, 61, 62, 63)
-                creatureABInfo->selectedLevel = originalLevel - 20;
-                creature->SetLevel(creatureABInfo->selectedLevel);
-            }
+            // scale level by subtracting 20 (80, 81, 82, 83) to (60, 61, 62, 63)
+            creatureABInfo->selectedLevel = originalLevel - 20;
+            creature->SetLevel(creatureABInfo->selectedLevel);
         } else {
             creatureABInfo->selectedLevel = creature->getLevel();
         }

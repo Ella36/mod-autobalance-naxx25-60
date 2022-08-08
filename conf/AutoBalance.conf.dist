@@ -5,18 +5,6 @@
 
 ###################################################################################################
 #
-#
-#     AutoBalance.levelHigherOffset
-#     AutoBalance.levelLowerOffset
-#        Level Offsets between creatures will not be scaled by level.
-#        You can even use it to disable scaling from lower to higher levelScaling
-#        setting levelLowerOffset to 80 (max wotlk level) for example.
-#        default: 3 (higher), 0 (lower)
-
-AutoBalance.levelHigherOffset = 3
-AutoBalance.levelLowerOffset  = 0
-
-#
 #     AutoBalance.MinHPModifier
 #        Minimum Modifier setting for Health Modification
 #        Default:     0.01
