@@ -348,14 +348,12 @@ public:
         if (!creature->IsAlive())
             return;
 
-        uint32 curCount=mapABInfo->playerCount;
-
         // already scaled
         if (creatureABInfo->selectedLevel > 0) {
             return;
         }
 
-        creatureABInfo->instancePlayerCount = curCount;
+        creatureABInfo->instancePlayerCount = mapABInfo->playerCount;
 
         if (!creatureABInfo->instancePlayerCount) // no players in map, do not modify attributes
             return;
