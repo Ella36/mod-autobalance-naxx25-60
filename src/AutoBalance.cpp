@@ -133,15 +133,11 @@ public:
     uint8 mapLevel = 60;
 };
 
-// The map values correspond with the .AutoBalance.XX.Name entries in the configuration file.
-static std::map<int, int> forcedCreatureIds;
 // cheaphack for difficulty server-wide.
 // Another value TODO in player class for the party leader's value to determine dungeon difficulty.
 static int8 PlayerCountDifficultyOffset, higherOffset, lowerOffset;
 static uint32 rewardRaid, rewardDungeon, MinPlayerReward;
-static bool LevelEndGameBoost, DungeonsOnly, PlayerChangeNotify, rewardEnabled, DungeonScaleDownXP;
-static float globalRate, healthMultiplier, manaMultiplier, armorMultiplier, damageMultiplier, MinHPModifier, MinManaModifier, MinDamageModifier,
-InflectionPoint, InflectionPointRaid, InflectionPointRaid10M, InflectionPointRaid25M, InflectionPointHeroic, InflectionPointRaidHeroic, InflectionPointRaid10MHeroic, InflectionPointRaid25MHeroic, BossInflectionMult;
+static float globalRate, healthMultiplier, manaMultiplier, armorMultiplier, damageMultiplier, MinHPModifier, MinManaModifier, MinDamageModifier;
 
 int GetValidDebugLevel()
 {
@@ -153,16 +149,6 @@ int GetValidDebugLevel()
         }
     return debugLevel;
 }
-
-int GetForcedNumPlayers(int creatureId)
-{
-    if (forcedCreatureIds.find(creatureId) == forcedCreatureIds.end()) // Don't want the forcedCreatureIds map to blowup to a massive empty array
-    {
-        return -1;
-    }
-    return forcedCreatureIds[creatureId];
-}
-
 
 void getAreaLevel(Map *map, uint8 areaid, uint8 &min, uint8 &max) {
     LFGDungeonEntry const* dungeon = GetLFGDungeon(map->GetId(), map->GetDifficulty());
@@ -199,14 +185,6 @@ class AutoBalance_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-        forcedCreatureIds.clear();
-
-        LevelEndGameBoost = sConfigMgr->GetOption<bool>("AutoBalance.LevelEndGameBoost", 1);
-        DungeonsOnly = sConfigMgr->GetOption<bool>("AutoBalance.DungeonsOnly", 1);
-        PlayerChangeNotify = sConfigMgr->GetOption<bool>("AutoBalance.PlayerChangeNotify", 1);
-        rewardEnabled = sConfigMgr->GetOption<bool>("AutoBalance.reward.enable", 1);
-        DungeonScaleDownXP = sConfigMgr->GetOption<bool>("AutoBalance.DungeonScaleDownXP", 0);
-
         PlayerCountDifficultyOffset = sConfigMgr->GetOption<uint32>("AutoBalance.playerCountDifficultyOffset", 0);
         higherOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelHigherOffset", 3);
         lowerOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelLowerOffset", 0);
@@ -214,15 +192,6 @@ class AutoBalance_WorldScript : public WorldScript
         rewardDungeon = sConfigMgr->GetOption<uint32>("AutoBalance.reward.dungeonToken", 47241);
         MinPlayerReward = sConfigMgr->GetOption<float>("AutoBalance.reward.MinPlayerReward", 1);
 
-        InflectionPoint = sConfigMgr->GetOption<float>("AutoBalance.InflectionPoint", 0.5f);
-        InflectionPointRaid = sConfigMgr->GetOption<float>("AutoBalance.InflectionPointRaid", InflectionPoint);
-        InflectionPointRaid25M = sConfigMgr->GetOption<float>("AutoBalance.InflectionPointRaid25M", InflectionPointRaid);
-        InflectionPointRaid10M = sConfigMgr->GetOption<float>("AutoBalance.InflectionPointRaid10M", InflectionPointRaid);
-        InflectionPointHeroic = sConfigMgr->GetOption<float>("AutoBalance.InflectionPointHeroic", InflectionPoint);
-        InflectionPointRaidHeroic = sConfigMgr->GetOption<float>("AutoBalance.InflectionPointRaidHeroic", InflectionPointRaid);
-        InflectionPointRaid25MHeroic = sConfigMgr->GetOption<float>("AutoBalance.InflectionPointRaid25MHeroic", InflectionPointRaid25M);
-        InflectionPointRaid10MHeroic = sConfigMgr->GetOption<float>("AutoBalance.InflectionPointRaid10MHeroic", InflectionPointRaid10M);
-        BossInflectionMult = sConfigMgr->GetOption<float>("AutoBalance.BossInflectionMult", 1.0f);
         globalRate = sConfigMgr->GetOption<float>("AutoBalance.rate.global", 1.0f);
         healthMultiplier = sConfigMgr->GetOption<float>("AutoBalance.rate.health", 1.0f);
         manaMultiplier = sConfigMgr->GetOption<float>("AutoBalance.rate.mana", 1.0f);
@@ -267,7 +236,7 @@ class AutoBalance_UnitScript : public UnitScript
     }
 
 
-    uint32 _Modifer_DealDamage(Unit* target, Unit* attacker, uint32 damage)
+    uint32 _Modifer_DealDamage(Unit* /* target */, Unit* attacker, uint32 damage)
     {
         if (!attacker || attacker->GetTypeId() == TYPEID_PLAYER || !attacker->IsInWorld())
             return damage;
@@ -276,12 +245,6 @@ class AutoBalance_UnitScript : public UnitScript
 
         if (damageMultiplier == 1)
             return damage;
-
-        if (!(!DungeonsOnly
-                || (target->GetMap()->IsDungeon() && attacker->GetMap()->IsDungeon()) || (attacker->GetMap()->IsBattleground()
-                     && target->GetMap()->IsBattleground())))
-            return damage;
-
 
         if ((attacker->IsHunterPet() || attacker->IsPet() || attacker->IsSummon()) && attacker->IsControlledByPlayer())
             return damage;
@@ -329,20 +292,17 @@ class AutoBalance_AllMapScript : public AllMapScript
             //mapABInfo->playerCount++; //(maybe we've to found a safe solution to avoid player recount each time)
             mapABInfo->playerCount = map->GetPlayersCountExceptGMs();
 
-            if (PlayerChangeNotify)
+            if (map->GetEntry()->IsDungeon() && player)
             {
-                if (map->GetEntry()->IsDungeon() && player)
+                Map::PlayerList const &playerList = map->GetPlayers();
+                if (!playerList.IsEmpty())
                 {
-                    Map::PlayerList const &playerList = map->GetPlayers();
-                    if (!playerList.IsEmpty())
+                    for (Map::PlayerList::const_iterator playerIteration = playerList.begin(); playerIteration != playerList.end(); ++playerIteration)
                     {
-                        for (Map::PlayerList::const_iterator playerIteration = playerList.begin(); playerIteration != playerList.end(); ++playerIteration)
+                        if (Player* playerHandle = playerIteration->GetSource())
                         {
-                            if (Player* playerHandle = playerIteration->GetSource())
-                            {
-                                ChatHandler chatHandle = ChatHandler(playerHandle->GetSession());
-                                chatHandle.PSendSysMessage("|cffFF0000 [AutoBalance]|r|cffFF8000 %s entered the Instance %s. Auto setting player count to %u (Player Difficulty Offset = %u) |r", player->GetName().c_str(), map->GetMapName(), mapABInfo->playerCount + PlayerCountDifficultyOffset, PlayerCountDifficultyOffset);
-                            }
+                            ChatHandler chatHandle = ChatHandler(playerHandle->GetSession());
+                            chatHandle.PSendSysMessage("|cffFF0000 [AutoBalance]|r|cffFF8000 %s entered the Instance %s. Auto setting player count to %u (Player Difficulty Offset = %u) |r", player->GetName().c_str(), map->GetMapName(), mapABInfo->playerCount + PlayerCountDifficultyOffset, PlayerCountDifficultyOffset);
                         }
                     }
                 }
@@ -397,20 +357,17 @@ class AutoBalance_AllMapScript : public AllMapScript
                 return;
             }
 
-            if (PlayerChangeNotify)
+            if (map->GetEntry()->IsDungeon() && player)
             {
-                if (map->GetEntry()->IsDungeon() && player)
+                Map::PlayerList const &playerList = map->GetPlayers();
+                if (!playerList.IsEmpty())
                 {
-                    Map::PlayerList const &playerList = map->GetPlayers();
-                    if (!playerList.IsEmpty())
+                    for (Map::PlayerList::const_iterator playerIteration = playerList.begin(); playerIteration != playerList.end(); ++playerIteration)
                     {
-                        for (Map::PlayerList::const_iterator playerIteration = playerList.begin(); playerIteration != playerList.end(); ++playerIteration)
+                        if (Player* playerHandle = playerIteration->GetSource())
                         {
-                            if (Player* playerHandle = playerIteration->GetSource())
-                            {
-                                ChatHandler chatHandle = ChatHandler(playerHandle->GetSession());
-                                chatHandle.PSendSysMessage("|cffFF0000 [-AutoBalance]|r|cffFF8000 %s left the Instance %s. Auto setting player count to %u (Player Difficulty Offset = %u) |r", player->GetName().c_str(), map->GetMapName(), mapABInfo->playerCount, PlayerCountDifficultyOffset);
-                            }
+                            ChatHandler chatHandle = ChatHandler(playerHandle->GetSession());
+                            chatHandle.PSendSysMessage("|cffFF0000 [-AutoBalance]|r|cffFF8000 %s left the Instance %s. Auto setting player count to %u (Player Difficulty Offset = %u) |r", player->GetName().c_str(), map->GetMapName(), mapABInfo->playerCount, PlayerCountDifficultyOffset);
                         }
                     }
                 }
@@ -450,9 +407,6 @@ public:
         if (creature->GetMapId() != 533)
             return;
 
-        if (!creature->GetMap()->IsDungeon() && !creature->GetMap()->IsBattleground() && DungeonsOnly)
-            return;
-
         if (((creature->IsHunterPet() || creature->IsPet() || creature->IsSummon()) && creature->IsControlledByPlayer()))
         {
             return;
@@ -463,15 +417,6 @@ public:
             return;
 
         CreatureTemplate const *creatureTemplate = creature->GetCreatureTemplate();
-
-        InstanceMap* instanceMap = ((InstanceMap*)sMapMgr->FindMap(creature->GetMapId(), creature->GetInstanceId()));
-        uint32 maxNumberOfPlayers = instanceMap->GetMaxPlayers();
-        int forcedNumPlayers = GetForcedNumPlayers(creatureTemplate->Entry);
-
-        if (forcedNumPlayers > 0)
-            maxNumberOfPlayers = forcedNumPlayers; // Force maxNumberOfPlayers to be changed to match the Configuration entries ForcedID2, ForcedID5, ForcedID10, ForcedID20, ForcedID25, ForcedID40
-        else if (forcedNumPlayers == 0)
-            return; // forcedNumPlayers 0 means that the creature is contained in DisabledID -> no scaling
 
         AutoBalanceCreatureInfo *creatureABInfo=creature->CustomData.GetDefault<AutoBalanceCreatureInfo>("AutoBalanceCreatureInfo");
 
@@ -523,7 +468,7 @@ public:
         if (originalLevel < 80)
             skipLevel = true;
 
-        if (creature->GetMap()->IsDungeon() && !skipLevel && !checkLevelOffset(level, originalLevel)) {  // change level only whithin the offsets and when in dungeon/raid
+        if (!skipLevel && !checkLevelOffset(level, originalLevel)) {  // change level only whithin the offsets and when in dungeon/raid
             if (level != creatureABInfo->selectedLevel || creatureABInfo->selectedLevel != creature->getLevel()) {
                 // scale level by subtracting 20 (80, 81, 82, 83) to (60, 61, 62, 63)
                 creatureABInfo->selectedLevel = originalLevel - 20;
@@ -545,17 +490,6 @@ public:
         uint32 scaledHealth = 0;
         uint32 scaledMana = 0;
 
-        // Note: InflectionPoint handle the number of players required to get 50% health.
-        //       you'd adjust this to raise or lower the hp modifier for per additional player in a non-whole group.
-        //
-        //       diff modify the rate of percentage increase between
-        //       number of players. Generally the closer to the value of 1 you have this
-        //       the less gradual the rate will be. For example in a 5 man it would take 3
-        //       total players to face a mob at full health.
-        //
-        //       The +1 and /2 values raise the TanH function to a positive range and make
-        //       sure the modifier never goes above the value or 1.0 or below 0.
-        //
         float defaultMultiplier = 1.0f;
 
         if (!sABScriptMgr->OnAfterDefaultMultiplier(creature, defaultMultiplier))
@@ -578,8 +512,7 @@ public:
             else {
                 newBaseHealth=creatureStats->BaseHealth[2];
                 // special increasing for end-game contents
-                if (LevelEndGameBoost)
-                    newBaseHealth *= creatureABInfo->selectedLevel >= 75 && originalLevel < 75 ? float(creatureABInfo->selectedLevel-70) * 0.3f : 1;
+                newBaseHealth *= creatureABInfo->selectedLevel >= 75 && originalLevel < 75 ? float(creatureABInfo->selectedLevel-70) * 0.3f : 1;
             }
 
             float newHealth =  newBaseHealth * creatureTemplate->ModHealth;
@@ -636,7 +569,7 @@ public:
             else {
                 newDmgBase=creatureStats->BaseDamage[2];
                 // special increasing for end-game contents
-                if (LevelEndGameBoost && !creature->GetMap()->IsRaid()) {
+                if (!creature->GetMap()->IsRaid()) {
                     newDmgBase *= creatureABInfo->selectedLevel >= 75 && originalLevel < 75 ? float(creatureABInfo->selectedLevel-70) * 0.3f : 1;
                 }
             }
