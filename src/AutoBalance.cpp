@@ -137,7 +137,7 @@ public:
 static std::map<int, int> forcedCreatureIds;
 // cheaphack for difficulty server-wide.
 // Another value TODO in player class for the party leader's value to determine dungeon difficulty.
-static int8 PlayerCountDifficultyOffset, LevelScaling, higherOffset, lowerOffset;
+static int8 PlayerCountDifficultyOffset, higherOffset, lowerOffset;
 static uint32 rewardRaid, rewardDungeon, MinPlayerReward;
 static bool LevelEndGameBoost, DungeonsOnly, PlayerChangeNotify, LevelUseDb, rewardEnabled, DungeonScaleDownXP;
 static float globalRate, healthMultiplier, manaMultiplier, armorMultiplier, damageMultiplier, MinHPModifier, MinManaModifier, MinDamageModifier,
@@ -208,7 +208,6 @@ class AutoBalance_WorldScript : public WorldScript
         rewardEnabled = sConfigMgr->GetOption<bool>("AutoBalance.reward.enable", 1);
         DungeonScaleDownXP = sConfigMgr->GetOption<bool>("AutoBalance.DungeonScaleDownXP", 0);
 
-        LevelScaling = sConfigMgr->GetOption<uint32>("AutoBalance.levelScaling", 1);
         PlayerCountDifficultyOffset = sConfigMgr->GetOption<uint32>("AutoBalance.playerCountDifficultyOffset", 0);
         higherOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelHigherOffset", 3);
         lowerOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelLowerOffset", 0);
@@ -494,14 +493,10 @@ public:
         uint8 bonusLevel = creatureTemplate->rank == CREATURE_ELITE_WORLDBOSS ? 3 : 0;
         // already scaled
         if (creatureABInfo->selectedLevel > 0) {
-            if (LevelScaling) {
-                if (checkLevelOffset(mapABInfo->mapLevel + bonusLevel, creature->getLevel()) &&
-                    checkLevelOffset(creatureABInfo->selectedLevel, creature->getLevel()) &&
-                    creatureABInfo->instancePlayerCount == curCount) {
-                    return;
-                }
-            } else if (creatureABInfo->instancePlayerCount == curCount) {
-                    return;
+            if (checkLevelOffset(mapABInfo->mapLevel + bonusLevel, creature->getLevel()) &&
+                checkLevelOffset(creatureABInfo->selectedLevel, creature->getLevel()) &&
+                creatureABInfo->instancePlayerCount == curCount) {
+                return;
             }
         }
 
@@ -529,7 +524,7 @@ public:
         if (originalLevel < 80)
             skipLevel = true;
 
-        if (LevelScaling && creature->GetMap()->IsDungeon() && !skipLevel && !checkLevelOffset(level, originalLevel)) {  // change level only whithin the offsets and when in dungeon/raid
+        if (creature->GetMap()->IsDungeon() && !skipLevel && !checkLevelOffset(level, originalLevel)) {  // change level only whithin the offsets and when in dungeon/raid
             if (level != creatureABInfo->selectedLevel || creatureABInfo->selectedLevel != creature->getLevel()) {
                 // scale level by subtracting 20 (80, 81, 82, 83) to (60, 61, 62, 63)
                 creatureABInfo->selectedLevel = originalLevel - 20;
@@ -577,7 +572,7 @@ public:
         }
 
         float hpStatsRate  = 1.0f;
-        if (!useDefStats && LevelScaling && !skipLevel) {
+        if (!useDefStats && !skipLevel) {
             float newBaseHealth = 0;
             if (level <= 60)
                 newBaseHealth=creatureStats->BaseHealth[0];
@@ -612,7 +607,7 @@ public:
         //GetPlayerClassList(creature, playerClassList); // Update playerClassList with the list of all the participating Classes
 
         float manaStatsRate  = 1.0f;
-        if (!useDefStats && LevelScaling && !skipLevel) {
+        if (!useDefStats && !skipLevel) {
             float newMana =  creatureStats->GenerateMana(creatureTemplate);
             manaStatsRate = newMana/float(baseMana);
         }
@@ -634,7 +629,7 @@ public:
             damageMul = MinDamageModifier;
         }
 
-        if (!useDefStats && LevelScaling && !skipLevel) {
+        if (!useDefStats && !skipLevel) {
             float origDmgBase = origCreatureStats->GenerateBaseDamage(creatureTemplate);
             float newDmgBase = 0;
             if (level <= 60)
@@ -653,7 +648,7 @@ public:
         }
 
         creatureABInfo->ArmorMultiplier = defaultMultiplier * globalRate * armorMultiplier;
-        uint32 newBaseArmor= round(creatureABInfo->ArmorMultiplier * (useDefStats || !LevelScaling || skipLevel ? origCreatureStats->GenerateArmor(creatureTemplate) : creatureStats->GenerateArmor(creatureTemplate)));
+        uint32 newBaseArmor= round(creatureABInfo->ArmorMultiplier * (useDefStats || skipLevel ? origCreatureStats->GenerateArmor(creatureTemplate) : creatureStats->GenerateArmor(creatureTemplate)));
 
         if (!sABScriptMgr->OnBeforeUpdateStats(creature, scaledHealth, scaledMana, damageMul, newBaseArmor))
             return;
