@@ -15,22 +15,6 @@
 
 AutoBalance.levelHigherOffset = 3
 AutoBalance.levelLowerOffset  = 0
-#
-#     AutoBalance.DebugLevel
-#        0 = None
-#        1 = Errors Only
-#        2 = Errors and Basic Information
-#        3 = All  Info
-#        Default:     2
-
-AutoBalance.DebugLevel=2
-
-#
-#     .AutoBalance.PlayerChangeNotify
-#        Set Auto Notifications to all players in Instance that player count has changed.
-#        Default:     1 (1 = ON, 0 = OFF)
-
-AutoBalance.PlayerChangeNotify=1
 
 #
 #     AutoBalance.MinHPModifier
@@ -67,71 +51,3 @@ AutoBalance.rate.mana   = 1.0
 AutoBalance.rate.armor  = 1.0
 AutoBalance.rate.damage = 1.0
 
-#
-#     AutoBalance.playerCountDifficultyOffset
-#        Offset of players inside an instance
-#        Default:     0
-
-AutoBalance.playerCountDifficultyOffset=0
-
-#
-#     AutoBalance.ForcedIDXX
-#        Sets MobIDs for the group they belong to.
-#        All 5 Man Mobs should go in .AutoBalance.5.Name
-#        All 10 Man Mobs should go in .AutoBalance.10.Name etc.
-
-AutoBalance.ForcedID40=""
-AutoBalance.ForcedID25=""
-AutoBalance.ForcedID20=""
-AutoBalance.ForcedID10=""
-AutoBalance.ForcedID5=""
-AutoBalance.ForcedID2=""
-
-#
-#     AutoBalance.DisabledID
-#        Disable scaling on specific creatures
-#
-
-AutoBalance.DisabledID=""
-
-##########################
-#
-# REWARD SYSTEM (experimental)
-#
-##########################
-
-
-#
-#   AutoBalance.reward.enable
-#       This is an experimental feature to reward a player that kill a boss when
-#       a pre-wotlk dungeon/raid is completed with creature levelling enabled.
-#       This is an idea to boost old contents even if you're end-game player.
-#
-#       Default:     0 (1 = ON, 0 = OFF)
-
-AutoBalance.reward.enable = 0
-
-
-#
-#   AutoBalance.reward.raidToken
-#   AutoBalance.reward.dungeonToken
-#
-#
-#       Default:
-#           raidToken -> emblem of frost (49426)
-#           dungeonToken -> emblem of triumph (47241)
-
-AutoBalance.reward.raidToken    = 49426
-AutoBalance.reward.dungeonToken = 47241
-
-#
-#   AutoBalance.reward.MinPlayerReward
-#       This conf option checks how many players are in the same
-#       map before allowing the reward to be carried out
-#       if MinPlayerReward is set to two and player is soloing this conf doesn't reward then.
-#		this will give more a challenge to players for low level instances.
-#
-#       Default:     1
-
-AutoBalance.reward.MinPlayerReward = 1
-#

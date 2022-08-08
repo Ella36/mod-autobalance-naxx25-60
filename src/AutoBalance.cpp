@@ -135,20 +135,8 @@ public:
 
 // cheaphack for difficulty server-wide.
 // Another value TODO in player class for the party leader's value to determine dungeon difficulty.
-static int8 PlayerCountDifficultyOffset, higherOffset, lowerOffset;
-static uint32 rewardRaid, rewardDungeon, MinPlayerReward;
+static int8 higherOffset, lowerOffset;
 static float globalRate, healthMultiplier, manaMultiplier, armorMultiplier, damageMultiplier, MinHPModifier, MinManaModifier, MinDamageModifier;
-
-int GetValidDebugLevel()
-{
-    int debugLevel = sConfigMgr->GetOption<uint32>("AutoBalance.DebugLevel", 2);
-
-    if ((debugLevel < 0) || (debugLevel > 3))
-        {
-        return 1;
-        }
-    return debugLevel;
-}
 
 void getAreaLevel(Map *map, uint8 areaid, uint8 &min, uint8 &max) {
     LFGDungeonEntry const* dungeon = GetLFGDungeon(map->GetId(), map->GetDifficulty());
@@ -185,12 +173,8 @@ class AutoBalance_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-        PlayerCountDifficultyOffset = sConfigMgr->GetOption<uint32>("AutoBalance.playerCountDifficultyOffset", 0);
         higherOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelHigherOffset", 3);
         lowerOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelLowerOffset", 0);
-        rewardRaid = sConfigMgr->GetOption<uint32>("AutoBalance.reward.raidToken", 49426);
-        rewardDungeon = sConfigMgr->GetOption<uint32>("AutoBalance.reward.dungeonToken", 47241);
-        MinPlayerReward = sConfigMgr->GetOption<float>("AutoBalance.reward.MinPlayerReward", 1);
 
         globalRate = sConfigMgr->GetOption<float>("AutoBalance.rate.global", 1.0f);
         healthMultiplier = sConfigMgr->GetOption<float>("AutoBalance.rate.health", 1.0f);
@@ -289,24 +273,7 @@ class AutoBalance_AllMapScript : public AllMapScript
                 }
             }
 
-            //mapABInfo->playerCount++; //(maybe we've to found a safe solution to avoid player recount each time)
             mapABInfo->playerCount = map->GetPlayersCountExceptGMs();
-
-            if (map->GetEntry()->IsDungeon() && player)
-            {
-                Map::PlayerList const &playerList = map->GetPlayers();
-                if (!playerList.IsEmpty())
-                {
-                    for (Map::PlayerList::const_iterator playerIteration = playerList.begin(); playerIteration != playerList.end(); ++playerIteration)
-                    {
-                        if (Player* playerHandle = playerIteration->GetSource())
-                        {
-                            ChatHandler chatHandle = ChatHandler(playerHandle->GetSession());
-                            chatHandle.PSendSysMessage("|cffFF0000 [AutoBalance]|r|cffFF8000 %s entered the Instance %s. Auto setting player count to %u (Player Difficulty Offset = %u) |r", player->GetName().c_str(), map->GetMapName(), mapABInfo->playerCount + PlayerCountDifficultyOffset, PlayerCountDifficultyOffset);
-                        }
-                    }
-                }
-            }
         }
 
         void OnPlayerLeaveAll(Map* map, Player* player)
@@ -316,9 +283,6 @@ class AutoBalance_AllMapScript : public AllMapScript
 
             AutoBalanceMapInfo *mapABInfo=map->CustomData.GetDefault<AutoBalanceMapInfo>("AutoBalanceMapInfo");
 
-            //mapABInfo->playerCount--;// (maybe we've to found a safe solution to avoid player recount each time)
-            // mapABInfo->playerCount = map->GetPlayersCountExceptGMs();
-            //pklloveyou天鹿:
             if (map->GetEntry() && map->GetEntry()->IsDungeon())
             {
                 bool AutoBalanceCheck = false;
@@ -355,22 +319,6 @@ class AutoBalance_AllMapScript : public AllMapScript
             if (!mapABInfo->playerCount) {
                 mapABInfo->mapLevel = 0;
                 return;
-            }
-
-            if (map->GetEntry()->IsDungeon() && player)
-            {
-                Map::PlayerList const &playerList = map->GetPlayers();
-                if (!playerList.IsEmpty())
-                {
-                    for (Map::PlayerList::const_iterator playerIteration = playerList.begin(); playerIteration != playerList.end(); ++playerIteration)
-                    {
-                        if (Player* playerHandle = playerIteration->GetSource())
-                        {
-                            ChatHandler chatHandle = ChatHandler(playerHandle->GetSession());
-                            chatHandle.PSendSysMessage("|cffFF0000 [-AutoBalance]|r|cffFF8000 %s left the Instance %s. Auto setting player count to %u (Player Difficulty Offset = %u) |r", player->GetName().c_str(), map->GetMapName(), mapABInfo->playerCount, PlayerCountDifficultyOffset);
-                        }
-                    }
-                }
             }
         }
 };
@@ -432,7 +380,7 @@ public:
         if (!creature->IsAlive())
             return;
 
-        uint32 curCount=mapABInfo->playerCount + PlayerCountDifficultyOffset;
+        uint32 curCount=mapABInfo->playerCount;
 
         uint8 bonusLevel = creatureTemplate->rank == CREATURE_ELITE_WORLDBOSS ? 3 : 0;
         // already scaled
@@ -532,9 +480,6 @@ public:
         creatureABInfo->HealthMultiplier *= hpStatsRate;
 
         scaledHealth = round(((float) baseHealth * creatureABInfo->HealthMultiplier) + 1.0f);
-
-        //Getting the list of Classes in this group - this will be used later on to determine what additional scaling will be required based on the ratio of tank/dps/healer
-        //GetPlayerClassList(creature, playerClassList); // Update playerClassList with the list of all the participating Classes
 
         float manaStatsRate  = 1.0f;
         if (!useDefStats && !skipLevel) {
