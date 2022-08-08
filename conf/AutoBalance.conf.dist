@@ -15,17 +15,6 @@
 
 AutoBalance.levelHigherOffset = 3
 AutoBalance.levelLowerOffset  = 0
-
-#
-#     AutoBalance.levelUseDbValuesWhenExists
-#        When enabled with levelScaling, the creature will use its default database values
-#        instead of level scaling formula when player/party level has correspondance with
-#        creature_template minlevel/maxlevel.
-#
-#        Default:     0 (1 = ON, 0 = OFF)
-
-AutoBalance.levelUseDbValuesWhenExists = 0
-
 #
 #     AutoBalance.LevelEndGameBoost
 #        End game creatures have an exponential (not linear) regression
