@@ -30,19 +30,14 @@
 
 #include "Configuration/Config.h"
 #include "Unit.h"
-#include "Chat.h"
 #include "Creature.h"
 #include "Player.h"
-#include "ObjectMgr.h"
 #include "MapMgr.h"
 #include "World.h"
 #include "Map.h"
 #include "ScriptMgr.h"
-#include "Language.h"
-#include <vector>
 #include "AutoBalance.h"
 #include "ScriptMgrMacros.h"
-#include "Group.h"
 
 #if AC_COMPILER == AC_COMPILER_GNU
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -135,25 +130,7 @@ public:
 
 // cheaphack for difficulty server-wide.
 // Another value TODO in player class for the party leader's value to determine dungeon difficulty.
-static int8 higherOffset, lowerOffset;
 static float globalRate, healthMultiplier, manaMultiplier, armorMultiplier, damageMultiplier, MinHPModifier, MinManaModifier, MinDamageModifier;
-
-void getAreaLevel(Map *map, uint8 areaid, uint8 &min, uint8 &max) {
-    LFGDungeonEntry const* dungeon = GetLFGDungeon(map->GetId(), map->GetDifficulty());
-    if (dungeon && (map->IsDungeon() || map->IsRaid())) {
-        min  = dungeon->minlevel;
-        max  = dungeon->reclevel ? dungeon->reclevel : dungeon->maxlevel;
-    }
-
-    if (!min && !max)
-    {
-        AreaTableEntry const* areaEntry = sAreaTableStore.LookupEntry(areaid);
-        if (areaEntry && areaEntry->area_level > 0) {
-            min = areaEntry->area_level;
-            max = areaEntry->area_level;
-        }
-    }
-}
 
 class AutoBalance_WorldScript : public WorldScript
 {
@@ -170,8 +147,6 @@ class AutoBalance_WorldScript : public WorldScript
 
     void SetInitialWorldSettings()
     {
-        higherOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelHigherOffset", 3);
-        lowerOffset = sConfigMgr->GetOption<uint32>("AutoBalance.levelLowerOffset", 0);
 
         globalRate = sConfigMgr->GetOption<float>("AutoBalance.rate.global", 1.0f);
         healthMultiplier = sConfigMgr->GetOption<float>("AutoBalance.rate.health", 1.0f);
@@ -375,7 +350,6 @@ public:
 
         uint32 curCount=mapABInfo->playerCount;
 
-        uint8 bonusLevel = creatureTemplate->rank == CREATURE_ELITE_WORLDBOSS ? 3 : 0;
         // already scaled
         if (creatureABInfo->selectedLevel > 0) {
             return;
@@ -393,15 +367,8 @@ public:
 
         uint8 level = mapABInfo->mapLevel;
 
-        uint8 areaMinLvl, areaMaxLvl;
-        getAreaLevel(creature->GetMap(), creature->GetAreaId(), areaMinLvl, areaMaxLvl);
-
-        // avoid level changing for critters and special creatures (spell summons etc.) in instances
         bool skipLevel=false;
-        if (originalLevel <= 1 && areaMinLvl >= 5)
-            skipLevel = true;
-
-        // No creature under 80 exists that should be scaled down
+        // No creature under 80 exists that should be scaled down 
         if (originalLevel < 80)
             skipLevel = true;
 
@@ -453,15 +420,6 @@ public:
             }
 
             float newHealth =  newBaseHealth * creatureTemplate->ModHealth;
-
-            // allows health to be different with creatures that originally
-            // differentiate their health by different level instead of multiplier field.
-            // expecially in dungeons. The health reduction decrease if original level is similar to the area max level
-            if (originalLevel >= areaMinLvl && originalLevel < areaMaxLvl) {
-                float reduction = newHealth / float(areaMaxLvl-areaMinLvl) * (float(areaMaxLvl-originalLevel)*0.3f); // never more than 30%
-                if (reduction > 0 && reduction < newHealth)
-                    newHealth -= reduction;
-            }
 
             hpStatsRate = newHealth / float(baseHealth);
         }
