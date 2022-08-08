@@ -236,22 +236,6 @@ class AutoBalance_WorldScript : public WorldScript
     }
 };
 
-class AutoBalance_PlayerScript : public PlayerScript
-{
-    public:
-        AutoBalance_PlayerScript()
-            : PlayerScript("AutoBalance_PlayerScript")
-        {
-        }
-
-        void OnLogin(Player *Player) override
-        {
-            if ((sConfigMgr->GetOption<bool>("AutoBalanceAnnounce.enable", true)) && (sConfigMgr->GetOption<bool>("AutoBalance.enable", true))) {
-                ChatHandler(Player->GetSession()).SendSysMessage("This server is running the |cff4CFF00AutoBalance |rmodule.");
-            }
-        }
-};
-
 class AutoBalance_UnitScript : public UnitScript
 {
     public:
@@ -581,55 +565,6 @@ public:
         //       sure the modifier never goes above the value or 1.0 or below 0.
         //
         float defaultMultiplier = 1.0f;
-        if (creatureABInfo->instancePlayerCount < maxNumberOfPlayers)
-        {
-            float inflectionValue  = (float)maxNumberOfPlayers;
-
-            if (instanceMap->IsHeroic())
-            {
-                if (instanceMap->IsRaid())
-                {
-                    switch (instanceMap->GetMaxPlayers())
-                    {
-                        case 10:
-                            inflectionValue *= InflectionPointRaid10MHeroic;
-                            break;
-                        case 25:
-                            inflectionValue *= InflectionPointRaid25MHeroic;
-                            break;
-                        default:
-                            inflectionValue *= InflectionPointRaidHeroic;
-                    }
-                }
-                else
-                    inflectionValue *= InflectionPointHeroic;
-            }
-            else
-            {
-                if (instanceMap->IsRaid())
-                {
-                    switch (instanceMap->GetMaxPlayers())
-                    {
-                        case 10:
-                            inflectionValue *= InflectionPointRaid10M;
-                            break;
-                        case 25:
-                            inflectionValue *= InflectionPointRaid25M;
-                            break;
-                        default:
-                            inflectionValue *= InflectionPointRaid;
-                    }
-                }
-                else
-                    inflectionValue *= InflectionPoint;
-            }
-            if (creature->IsDungeonBoss()) {
-                inflectionValue *= BossInflectionMult;
-            }
-
-            float diff = ((float)maxNumberOfPlayers/5)*1.5f;
-            defaultMultiplier = (tanh(((float)creatureABInfo->instancePlayerCount - inflectionValue) / diff) + 1.0f) / 2.0f;
-        }
 
         if (!sABScriptMgr->OnAfterDefaultMultiplier(creature, defaultMultiplier))
             return;
@@ -888,7 +823,6 @@ public:
 void AddAutoBalanceScripts()
 {
     new AutoBalance_WorldScript();
-    new AutoBalance_PlayerScript();
     new AutoBalance_UnitScript();
     new AutoBalance_AllCreatureScript();
     // new AutoBalance_AllMapScript();
