@@ -154,22 +154,6 @@ int GetValidDebugLevel()
     return debugLevel;
 }
 
-void LoadForcedCreatureIdsFromString(std::string creatureIds, int forcedPlayerCount) // Used for reading the string from the configuration file to for those creatures who need to be scaled for XX number of players.
-{
-    std::string delimitedValue;
-    std::stringstream creatureIdsStream;
-
-    creatureIdsStream.str(creatureIds);
-    while (std::getline(creatureIdsStream, delimitedValue, ',')) // Process each Creature ID in the string, delimited by the comma - ","
-    {
-        int creatureId = atoi(delimitedValue.c_str());
-        if (creatureId >= 0)
-        {
-            forcedCreatureIds[creatureId] = forcedPlayerCount;
-        }
-    }
-}
-
 int GetForcedNumPlayers(int creatureId)
 {
     if (forcedCreatureIds.find(creatureId) == forcedCreatureIds.end()) // Don't want the forcedCreatureIds map to blowup to a massive empty array
@@ -216,12 +200,6 @@ class AutoBalance_WorldScript : public WorldScript
     void SetInitialWorldSettings()
     {
         forcedCreatureIds.clear();
-        LoadForcedCreatureIdsFromString(sConfigMgr->GetOption<std::string>("AutoBalance.ForcedID40", ""), 40);
-        LoadForcedCreatureIdsFromString(sConfigMgr->GetOption<std::string>("AutoBalance.ForcedID25", ""), 25);
-        LoadForcedCreatureIdsFromString(sConfigMgr->GetOption<std::string>("AutoBalance.ForcedID10", ""), 10);
-        LoadForcedCreatureIdsFromString(sConfigMgr->GetOption<std::string>("AutoBalance.ForcedID5", ""), 5);
-        LoadForcedCreatureIdsFromString(sConfigMgr->GetOption<std::string>("AutoBalance.ForcedID2", ""), 2);
-        LoadForcedCreatureIdsFromString(sConfigMgr->GetOption<std::string>("AutoBalance.DisabledID", ""), 0);
 
         enabled = sConfigMgr->GetOption<bool>("AutoBalance.enable", 1);
         LevelEndGameBoost = sConfigMgr->GetOption<bool>("AutoBalance.LevelEndGameBoost", 1);
@@ -923,55 +901,6 @@ public:
     }
 };
 
-class AutoBalance_GlobalScript : public GlobalScript {
-public:
-    AutoBalance_GlobalScript() : GlobalScript("AutoBalance_GlobalScript") { }
-
-    void OnAfterUpdateEncounterState(Map* map, EncounterCreditType type,  uint32 /*creditEntry*/, Unit* source, Difficulty /*difficulty_fixed*/, DungeonEncounterList const* /*encounters*/, uint32 /*dungeonCompleted*/, bool updated) override {
-        //if (!dungeonCompleted)
-        //    return;
-
-        if (!rewardEnabled || !updated)
-            return;
-
-        if (map->GetPlayersCountExceptGMs() < MinPlayerReward)
-            return;
-
-        AutoBalanceMapInfo *mapABInfo=map->CustomData.GetDefault<AutoBalanceMapInfo>("AutoBalanceMapInfo");
-
-        uint8 areaMinLvl, areaMaxLvl;
-        getAreaLevel(map, source->GetAreaId(), areaMinLvl, areaMaxLvl);
-
-        // skip if it's not a pre-wotlk dungeon/raid and if it's not scaled
-        if (!LevelScaling || lowerOffset >= 10 || mapABInfo->mapLevel <= 70 || areaMinLvl > 70
-            // skip when not in dungeon or not kill credit
-            || type != ENCOUNTER_CREDIT_KILL_CREATURE || !map->IsDungeon())
-            return;
-
-        Map::PlayerList const &playerList = map->GetPlayers();
-
-        if (playerList.IsEmpty())
-            return;
-
-        uint32 reward = map->IsRaid() ? rewardRaid : rewardDungeon;
-        if (!reward)
-            return;
-
-        //instanceStart=0, endTime;
-        uint8 difficulty = map->GetDifficulty();
-
-        for (Map::PlayerList::const_iterator itr = playerList.begin(); itr != playerList.end(); ++itr)
-        {
-            if (!itr->GetSource() || itr->GetSource()->IsGameMaster() || itr->GetSource()->getLevel() < DEFAULT_MAX_LEVEL)
-                continue;
-
-            itr->GetSource()->AddItem(reward, 1 + difficulty); // difficulty boost
-        }
-    }
-};
-
-
-
 void AddAutoBalanceScripts()
 {
     new AutoBalance_WorldScript();
@@ -980,5 +909,4 @@ void AddAutoBalanceScripts()
     new AutoBalance_AllCreatureScript();
     // new AutoBalance_AllMapScript();
     new AutoBalance_CommandScript();
-    // new AutoBalance_GlobalScript();
 }
