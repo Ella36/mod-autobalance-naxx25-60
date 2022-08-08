@@ -167,9 +167,6 @@ class AutoBalance_WorldScript : public WorldScript
     {
         SetInitialWorldSettings();
     }
-    void OnStartup() override
-    {
-    }
 
     void SetInitialWorldSettings()
     {
@@ -342,10 +339,6 @@ public:
         ModifyCreatureAttributes(creature);
     }
 
-    bool checkLevelOffset(uint8 selectedLevel, uint8 targetLevel) {
-        return selectedLevel && ((targetLevel >= selectedLevel && targetLevel <= (selectedLevel + higherOffset) ) || (targetLevel <= selectedLevel && targetLevel >= (selectedLevel - lowerOffset)));
-    }
-
     void ModifyCreatureAttributes(Creature* creature, bool resetSelLevel = false)
     {
         if (!creature || !creature->GetMap())
@@ -385,11 +378,7 @@ public:
         uint8 bonusLevel = creatureTemplate->rank == CREATURE_ELITE_WORLDBOSS ? 3 : 0;
         // already scaled
         if (creatureABInfo->selectedLevel > 0) {
-            if (checkLevelOffset(mapABInfo->mapLevel + bonusLevel, creature->getLevel()) &&
-                checkLevelOffset(creatureABInfo->selectedLevel, creature->getLevel()) &&
-                creatureABInfo->instancePlayerCount == curCount) {
-                return;
-            }
+            return;
         }
 
         creatureABInfo->instancePlayerCount = curCount;
@@ -416,7 +405,7 @@ public:
         if (originalLevel < 80)
             skipLevel = true;
 
-        if (!skipLevel && !checkLevelOffset(level, originalLevel)) {  // change level only whithin the offsets and when in dungeon/raid
+        if (!skipLevel) {  // change level only whithin the offsets and when in dungeon/raid
             if (level != creatureABInfo->selectedLevel || creatureABInfo->selectedLevel != creature->getLevel()) {
                 // scale level by subtracting 20 (80, 81, 82, 83) to (60, 61, 62, 63)
                 creatureABInfo->selectedLevel = originalLevel - 20;
