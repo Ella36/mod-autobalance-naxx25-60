@@ -139,7 +139,7 @@ static std::map<int, int> forcedCreatureIds;
 // Another value TODO in player class for the party leader's value to determine dungeon difficulty.
 static int8 PlayerCountDifficultyOffset, LevelScaling, higherOffset, lowerOffset;
 static uint32 rewardRaid, rewardDungeon, MinPlayerReward;
-static bool enabled, LevelEndGameBoost, DungeonsOnly, PlayerChangeNotify, LevelUseDb, rewardEnabled, DungeonScaleDownXP;
+static bool LevelEndGameBoost, DungeonsOnly, PlayerChangeNotify, LevelUseDb, rewardEnabled, DungeonScaleDownXP;
 static float globalRate, healthMultiplier, manaMultiplier, armorMultiplier, damageMultiplier, MinHPModifier, MinManaModifier, MinDamageModifier,
 InflectionPoint, InflectionPointRaid, InflectionPointRaid10M, InflectionPointRaid25M, InflectionPointHeroic, InflectionPointRaidHeroic, InflectionPointRaid10MHeroic, InflectionPointRaid25MHeroic, BossInflectionMult;
 
@@ -201,7 +201,6 @@ class AutoBalance_WorldScript : public WorldScript
     {
         forcedCreatureIds.clear();
 
-        enabled = sConfigMgr->GetOption<bool>("AutoBalance.enable", 1);
         LevelEndGameBoost = sConfigMgr->GetOption<bool>("AutoBalance.LevelEndGameBoost", 1);
         DungeonsOnly = sConfigMgr->GetOption<bool>("AutoBalance.DungeonsOnly", 1);
         PlayerChangeNotify = sConfigMgr->GetOption<bool>("AutoBalance.PlayerChangeNotify", 1);
@@ -288,9 +287,6 @@ class AutoBalance_UnitScript : public UnitScript
 
     uint32 _Modifer_DealDamage(Unit* target, Unit* attacker, uint32 damage)
     {
-        if (!enabled)
-            return damage;
-
         if (!attacker || attacker->GetTypeId() == TYPEID_PLAYER || !attacker->IsInWorld())
             return damage;
 
@@ -323,9 +319,6 @@ class AutoBalance_AllMapScript : public AllMapScript
 
         void OnPlayerEnterAll(Map* map, Player* player)
         {
-            if (!enabled)
-                return;
-
             if (player->IsGameMaster())
                 return;
 
@@ -376,9 +369,6 @@ class AutoBalance_AllMapScript : public AllMapScript
 
         void OnPlayerLeaveAll(Map* map, Player* player)
         {
-            if (!enabled)
-                return;
-
             if (player->IsGameMaster())
                 return;
 
@@ -457,17 +447,11 @@ public:
 
     void Creature_SelectLevel(const CreatureTemplate* /*creatureTemplate*/, Creature* creature) override
     {
-        if (!enabled)
-            return;
-
         ModifyCreatureAttributes(creature, true);
     }
 
     void OnAllCreatureUpdate(Creature* creature, uint32 /*diff*/) override
     {
-        if (!enabled)
-            return;
-
         ModifyCreatureAttributes(creature);
     }
 
