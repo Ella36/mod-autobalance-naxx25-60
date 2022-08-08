@@ -51,51 +51,6 @@ ABScriptMgr* ABScriptMgr::instance()
     return &instance;
 }
 
-bool ABScriptMgr::OnBeforeModifyAttributes(Creature *creature, uint32 & instancePlayerCount)
-{
-    auto ret = IsValidBoolScript<ABModuleScript>([&](ABModuleScript* script)
-    {
-        return !script->OnBeforeModifyAttributes(creature, instancePlayerCount);
-    });
-
-    if (ret && *ret)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool ABScriptMgr::OnAfterDefaultMultiplier(Creature *creature, float& defaultMultiplier)
-{
-    auto ret = IsValidBoolScript<ABModuleScript>([&](ABModuleScript* script)
-    {
-        return !script->OnAfterDefaultMultiplier(creature, defaultMultiplier);
-    });
-
-    if (ret && *ret)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool ABScriptMgr::OnBeforeUpdateStats(Creature* creature, uint32& scaledHealth, uint32& scaledMana, float& damageMultiplier, uint32& newBaseArmor)
-{
-    auto ret = IsValidBoolScript<ABModuleScript>([&](ABModuleScript* script)
-    {
-        return !script->OnBeforeUpdateStats(creature, scaledHealth, scaledMana, damageMultiplier, newBaseArmor);
-    });
-
-    if (ret && *ret)
-    {
-        return false;
-    }
-
-    return true;
-}
-
 ABModuleScript::ABModuleScript(const char* name)
     : ModuleScript(name)
 {
@@ -129,7 +84,6 @@ public:
 };
 
 // cheaphack for difficulty server-wide.
-// Another value TODO in player class for the party leader's value to determine dungeon difficulty.
 static float globalRate, healthMultiplier, manaMultiplier, armorMultiplier, damageMultiplier, MinHPModifier, MinManaModifier, MinDamageModifier;
 
 class AutoBalance_WorldScript : public WorldScript
@@ -358,9 +312,6 @@ public:
         if (!creatureABInfo->instancePlayerCount) // no players in map, do not modify attributes
             return;
 
-        if (!sABScriptMgr->OnBeforeModifyAttributes(creature, creatureABInfo->instancePlayerCount))
-            return;
-
         uint8 originalLevel = creatureTemplate->maxlevel;
 
         uint8 level = mapABInfo->mapLevel;
@@ -394,9 +345,6 @@ public:
 
         float defaultMultiplier = 1.0f;
 
-        if (!sABScriptMgr->OnAfterDefaultMultiplier(creature, defaultMultiplier))
-            return;
-
         creatureABInfo->HealthMultiplier =   healthMultiplier * defaultMultiplier * globalRate;
 
         if (creatureABInfo->HealthMultiplier <= MinHPModifier)
@@ -408,13 +356,12 @@ public:
         if (!useDefStats && !skipLevel) {
             float newBaseHealth = 0;
             if (level <= 60)
-                newBaseHealth=creatureStats->BaseHealth[0];
-            else if(level <= 70)
-                newBaseHealth=creatureStats->BaseHealth[1];
-            else {
-                newBaseHealth=creatureStats->BaseHealth[2];
-                // special increasing for end-game contents
-                newBaseHealth *= creatureABInfo->selectedLevel >= 75 && originalLevel < 75 ? float(creatureABInfo->selectedLevel-70) * 0.3f : 1;
+            {
+                newBaseHealth = creatureStats->BaseHealth[0];
+            }
+            else
+            {
+                newBaseHealth = creatureStats->BaseHealth[1];
             }
 
             float newHealth =  newBaseHealth * creatureTemplate->ModHealth;
@@ -469,9 +416,6 @@ public:
 
         creatureABInfo->ArmorMultiplier = defaultMultiplier * globalRate * armorMultiplier;
         uint32 newBaseArmor= round(creatureABInfo->ArmorMultiplier * (useDefStats || skipLevel ? origCreatureStats->GenerateArmor(creatureTemplate) : creatureStats->GenerateArmor(creatureTemplate)));
-
-        if (!sABScriptMgr->OnBeforeUpdateStats(creature, scaledHealth, scaledMana, damageMul, newBaseArmor))
-            return;
 
         uint32 prevMaxHealth = creature->GetMaxHealth();
         uint32 prevMaxPower = creature->GetMaxPower(POWER_MANA);
